@@ -1,50 +1,78 @@
-import React, { useEffect } from 'react'
-import ThreeBackground from './components/ThreeBackground'
-import Inspector from './components/Inspector'
-import Lenis from '@studio-freight/lenis'
+import { useState } from 'react'
+import axios from 'axios'
+import ImageUpload from './components/ImageUpload'
+import InspectionReport from './components/InspectionReport'
+import './App.css'
 
 function App() {
-    useEffect(() => {
-        // Lenis might not be needed if we don't scroll much, but good for polished feel
-        const lenis = new Lenis({ duration: 1.2 })
-        function raf(time) {
-            lenis.raf(time)
-            requestAnimationFrame(raf)
-        }
-        requestAnimationFrame(raf)
-        return () => lenis.destroy()
-    }, [])
+  const [inspectionResult, setInspectionResult] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
-            <ThreeBackground />
+  const handleImageUpload = async (file) => {
+    setLoading(true)
+    setError(null)
+    setInspectionResult(null)
 
-            {/* HEADER */}
-            <header style={{
-                padding: '1.5rem 3rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                backdropFilter: 'blur(10px)',
-                borderBottom: '1px solid rgba(255,255,255,0.05)',
-                zIndex: 10
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ width: '12px', height: '12px', background: 'var(--accent)', borderRadius: '50%', boxShadow: '0 0 10px var(--accent)' }}></div>
-                    <h1 style={{ fontSize: '1.5rem', letterSpacing: '-0.03em' }}>INFRASTRUCT<span style={{ fontWeight: 300, opacity: 0.7 }}>AI</span></h1>
-                </div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.9rem', opacity: 0.5, letterSpacing: '0.1em' }}>
-                    V 1.0.0 • ENG MODE
-                </div>
-            </header>
+    const formData = new FormData()
+    formData.append('file', file)
 
-            {/* MAIN CONTENT */}
-            <main style={{ flex: 1, position: 'relative', zIndex: 10, overflow: 'hidden', paddingTop: '1rem' }}>
-                <Inspector />
-            </main>
+    try {
+      const response = await axios.post('/api/inspect', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
 
-        </div>
-    )
+      setInspectionResult(response.data)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to process image. Please try again.')
+      console.error('Inspection error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleReset = () => {
+    setInspectionResult(null)
+    setError(null)
+  }
+
+  return (
+    <div className="app">
+      <div className="container">
+        <header className="header">
+          <h1>Infrastructure Inspection System</h1>
+          <p>AI-powered structural defect detection and analysis</p>
+        </header>
+
+        {!inspectionResult && !loading && (
+          <ImageUpload onUpload={handleImageUpload} />
+        )}
+
+        {loading && (
+          <div className="loading">
+            <div className="spinner"></div>
+            <p>Analyzing image...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="error">
+            <h3>Error</h3>
+            <p>{error}</p>
+            <button onClick={handleReset} className="btn-secondary">
+              Try Again
+            </button>
+          </div>
+        )}
+
+        {inspectionResult && !loading && (
+          <InspectionReport result={inspectionResult} onReset={handleReset} />
+        )}
+      </div>
+    </div>
+  )
 }
 
 export default App
