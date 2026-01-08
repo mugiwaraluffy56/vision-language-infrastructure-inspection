@@ -4,10 +4,12 @@ import './ImageUpload.css'
 function ImageUpload({ onUpload }) {
   const [preview, setPreview] = useState(null)
   const [dragActive, setDragActive] = useState(false)
+  const [selectedFile, setSelectedFile] = useState(null)
   const fileInputRef = useRef(null)
 
   const handleFile = (file) => {
     if (file && file.type.startsWith('image/')) {
+      setSelectedFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {
         setPreview(reader.result)
@@ -42,7 +44,7 @@ function ImageUpload({ onUpload }) {
   }
 
   const handleSubmit = () => {
-    const file = fileInputRef.current.files[0]
+    const file = selectedFile || fileInputRef.current.files[0]
     if (file) {
       onUpload(file)
     }
@@ -50,6 +52,7 @@ function ImageUpload({ onUpload }) {
 
   const handleReset = () => {
     setPreview(null)
+    setSelectedFile(null)
     fileInputRef.current.value = ''
   }
 
