@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-multipart
+ultralytics
+transformers
+torch
+pillow
+pydantic
+accelerate
+# requests # possibly needed for downloading mock images if we do that
